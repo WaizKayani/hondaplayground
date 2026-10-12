@@ -28,7 +28,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Vercel deployment
 
-Connect this repository to Vercel and deploy with the default Next.js settings. No environment variables are required.
+Deployed on vercel https://hondaplayground.vercel.app
 
 ## Browser-local demo data
 

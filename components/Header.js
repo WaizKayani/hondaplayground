@@ -18,8 +18,6 @@ export default function Header({ onResetDemo }) {
       <div className="header-inner">
         <div className="brand-block">
           <div className="brand-title">Honda × OSU AI Playground</div>
-          <div className="brand-subtitle">Student–Engineer Project Matching</div>
-          <span className="prototype-badge">Prototype Demo</span>
         </div>
         <nav className="header-nav" aria-label="Main">
           <Link

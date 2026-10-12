@@ -5,7 +5,6 @@ export default function HomePage() {
     <main className="landing">
       <div className="landing-card">
         <h1>Honda × OSU AI Playground</h1>
-        <span className="prototype-badge">Prototype Demo</span>
         <p>
           Connecting OSU students with real-world engineering opportunities at
           Honda.
