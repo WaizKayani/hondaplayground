@@ -508,49 +508,51 @@ export default function StudentPage() {
 
       {activeSection === "projects" && (
         <>
-          <div className="panel">
-            <h2 className="section-title">Filter Projects</h2>
-            <div className="filter-bar">
-              <div className="form-row filter-search">
-                <label className="form-label" htmlFor="project-search">
-                  Search by title
-                </label>
-                <input
-                  id="project-search"
-                  type="text"
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="Search projects"
-                />
-              </div>
-              <div>
-                <div className="form-label" style={{ marginBottom: "0.4rem" }}>
-                  Categories
+          {!selectedProject && (
+            <div className="panel">
+              <h2 className="section-title">Filter Projects</h2>
+              <div className="filter-bar">
+                <div className="form-row filter-search">
+                  <label className="form-label" htmlFor="project-search">
+                    Search by title
+                  </label>
+                  <input
+                    id="project-search"
+                    type="text"
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    placeholder="Search projects"
+                  />
                 </div>
-                <div className="checkbox-grid">
-                  {CATEGORIES.map((category) => (
-                    <label key={category} className="checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category)}
-                        onChange={() => toggleCategory(category)}
-                      />
-                      {category}
-                    </label>
-                  ))}
+                <div>
+                  <div className="form-label" style={{ marginBottom: "0.4rem" }}>
+                    Categories
+                  </div>
+                  <div className="checkbox-grid">
+                    {CATEGORIES.map((category) => (
+                      <label key={category} className="checkbox-item">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.includes(category)}
+                          onChange={() => toggleCategory(category)}
+                        />
+                        {category}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={clearFilters}
-                >
-                  Clear Filters
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {selectedProject ? (
             <div className="panel">
