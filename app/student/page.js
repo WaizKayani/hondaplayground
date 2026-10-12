@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ProjectCard from "../../components/ProjectCard";
 import { CATEGORIES } from "../../data/projects";
-import { ACADEMIC_YEARS } from "../../data/students";
 import {
   createId,
   getApplications,
@@ -12,24 +13,13 @@ import {
   getSelectedStudentId,
   getStudents,
   saveApplications,
-  saveSelectedStudentId,
-  saveStudents,
 } from "../../lib/storage";
 
-const emptyProfile = {
-  name: "",
-  major: "",
-  year: "Freshman",
-  skillsText: "",
-  interestsText: "",
-  availability: "",
-};
-
 export default function StudentPage() {
+  const router = useRouter();
   const [ready, setReady] = useState(false);
   const [projects, setProjects] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [applications, setApplications] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -37,9 +27,6 @@ export default function StudentPage() {
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [interestMessage, setInterestMessage] = useState("");
   const [message, setMessage] = useState(null);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [creatingProfile, setCreatingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState(emptyProfile);
   const [activeSection, setActiveSection] = useState("projects");
 
   useEffect(() => {
@@ -50,28 +37,24 @@ export default function StudentPage() {
 
     if (selectedId && !loadedStudents.some((s) => s.id === selectedId)) {
       selectedId = null;
-      saveSelectedStudentId(null);
     }
 
-    setProjects(loadedProjects);
-    setStudents(loadedStudents);
-    setApplications(loadedApplications);
-    setSelectedStudentId(selectedId);
-    setReady(true);
-  }, []);
+    if (!selectedId) {
+      router.replace("/student/select-profile");
+      return;
+    }
 
-  const selectedStudent =
-    students.find((student) => student.id === selectedStudentId) || null;
+    const student =
+      loadedStudents.find((item) => item.id === selectedId) || null;
+
+    setProjects(loadedProjects);
+    setSelectedStudent(student);
+    setApplications(loadedApplications);
+    setReady(true);
+  }, [router]);
 
   function showNotice(text, type = "info") {
     setMessage({ text, type });
-  }
-
-  function handleSelectStudent(studentId) {
-    setSelectedStudentId(studentId || null);
-    saveSelectedStudentId(studentId || null);
-    setEditingProfile(false);
-    setCreatingProfile(false);
   }
 
   function toggleCategory(category) {
@@ -183,83 +166,16 @@ export default function StudentPage() {
     showNotice("Application submitted successfully.", "success");
   }
 
-  function startEditProfile() {
-    if (!selectedStudent) return;
-    setCreatingProfile(false);
-    setEditingProfile(true);
-    setProfileForm({
-      name: selectedStudent.name,
-      major: selectedStudent.major,
-      year: selectedStudent.year,
-      skillsText: selectedStudent.skills.join(", "),
-      interestsText: selectedStudent.interests.join(", "),
-      availability: selectedStudent.availability,
-    });
-  }
-
-  function startCreateProfile() {
-    setEditingProfile(false);
-    setCreatingProfile(true);
-    setProfileForm(emptyProfile);
-  }
-
-  function parseList(text) {
-    return text
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  function saveProfile(event) {
-    event.preventDefault();
-    if (!profileForm.name.trim() || !profileForm.major.trim()) {
-      showNotice("Name and major are required.", "error");
-      return;
-    }
-
-    const profileData = {
-      name: profileForm.name.trim(),
-      major: profileForm.major.trim(),
-      year: profileForm.year,
-      skills: parseList(profileForm.skillsText),
-      interests: parseList(profileForm.interestsText),
-      availability: profileForm.availability.trim() || "Not specified",
-    };
-
-    let updatedStudents;
-    let newSelectedId = selectedStudentId;
-
-    if (creatingProfile) {
-      const newStudent = {
-        id: createId("stu"),
-        ...profileData,
-      };
-      updatedStudents = [...students, newStudent];
-      newSelectedId = newStudent.id;
-    } else {
-      updatedStudents = students.map((student) =>
-        student.id === selectedStudentId
-          ? { ...student, ...profileData }
-          : student
-      );
-    }
-
-    setStudents(updatedStudents);
-    saveStudents(updatedStudents);
-    setSelectedStudentId(newSelectedId);
-    saveSelectedStudentId(newSelectedId);
-    setEditingProfile(false);
-    setCreatingProfile(false);
-    showNotice("Profile saved.", "success");
-  }
-
   function myApplications() {
     if (!selectedStudent) return [];
     return applications
       .filter((app) => app.studentId === selectedStudent.id)
       .map((app) => {
         const project = projects.find((item) => item.id === app.projectId);
-        return { ...app, projectTitle: project ? project.title : "Unknown project" };
+        return {
+          ...app,
+          projectTitle: project ? project.title : "Unknown project",
+        };
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
   }
@@ -268,7 +184,7 @@ export default function StudentPage() {
     return myApplications().filter((app) => app.status === "Accepted");
   }
 
-  if (!ready) {
+  if (!ready || !selectedStudent) {
     return (
       <main>
         <div className="panel">
@@ -283,46 +199,18 @@ export default function StudentPage() {
   return (
     <main>
       <div className="panel">
-        <h1 className="panel-title">Explore Honda Projects</h1>
-        <p className="panel-subtitle">
-          Find projects that match your skills and interests.
-        </p>
-
-        <div className="student-select-row">
-          <div className="form-row">
-            <label className="form-label" htmlFor="demo-student">
-              Demo student
-            </label>
-            <select
-              id="demo-student"
-              value={selectedStudentId || ""}
-              onChange={(event) => handleSelectStudent(event.target.value)}
-            >
-              <option value="">Select a student</option>
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.name} — {student.major}
-                </option>
-              ))}
-            </select>
+        <div className="student-dashboard-header">
+          <div>
+            <h1 className="panel-title">Explore Honda Projects</h1>
+            <p className="panel-subtitle">
+              Find projects that match your skills and interests.
+            </p>
           </div>
-          <div className="btn-group">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={startCreateProfile}
-            >
-              New Profile
-            </button>
-            {selectedStudent && (
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={startEditProfile}
-              >
-                Edit Profile
-              </button>
-            )}
+          <div className="student-identity">
+            <p className="student-identity-name">{selectedStudent.name}</p>
+            <Link href="/student/select-profile" className="btn btn-outline">
+              Switch Profile
+            </Link>
           </div>
         </div>
 
@@ -337,147 +225,6 @@ export default function StudentPage() {
             }`}
           >
             {message.text}
-          </div>
-        )}
-
-        {(editingProfile || creatingProfile) && (
-          <form className="form-grid" onSubmit={saveProfile}>
-            <h2 className="section-title">
-              {creatingProfile ? "Create Student Profile" : "Edit Student Profile"}
-            </h2>
-            <div className="form-row-2">
-              <div className="form-row">
-                <label className="form-label" htmlFor="student-name">
-                  Full name
-                </label>
-                <input
-                  id="student-name"
-                  type="text"
-                  value={profileForm.name}
-                  onChange={(event) =>
-                    setProfileForm({ ...profileForm, name: event.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="form-row">
-                <label className="form-label" htmlFor="student-major">
-                  Major
-                </label>
-                <input
-                  id="student-major"
-                  type="text"
-                  value={profileForm.major}
-                  onChange={(event) =>
-                    setProfileForm({ ...profileForm, major: event.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-row-2">
-              <div className="form-row">
-                <label className="form-label" htmlFor="student-year">
-                  Academic year
-                </label>
-                <select
-                  id="student-year"
-                  value={profileForm.year}
-                  onChange={(event) =>
-                    setProfileForm({ ...profileForm, year: event.target.value })
-                  }
-                >
-                  {ACADEMIC_YEARS.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-row">
-                <label className="form-label" htmlFor="student-availability">
-                  Weekly availability
-                </label>
-                <input
-                  id="student-availability"
-                  type="text"
-                  placeholder="e.g. 8 hours/week"
-                  value={profileForm.availability}
-                  onChange={(event) =>
-                    setProfileForm({
-                      ...profileForm,
-                      availability: event.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <label className="form-label" htmlFor="student-skills">
-                Skills (comma-separated)
-              </label>
-              <input
-                id="student-skills"
-                type="text"
-                value={profileForm.skillsText}
-                onChange={(event) =>
-                  setProfileForm({
-                    ...profileForm,
-                    skillsText: event.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="form-row">
-              <label className="form-label" htmlFor="student-interests">
-                Interests (comma-separated)
-              </label>
-              <input
-                id="student-interests"
-                type="text"
-                value={profileForm.interestsText}
-                onChange={(event) =>
-                  setProfileForm({
-                    ...profileForm,
-                    interestsText: event.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn">
-                Save Profile
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => {
-                  setEditingProfile(false);
-                  setCreatingProfile(false);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
-
-        {!editingProfile && !creatingProfile && selectedStudent && (
-          <div className="detail-block">
-            <p>
-              <strong>{selectedStudent.name}</strong> — {selectedStudent.major},{" "}
-              {selectedStudent.year}
-            </p>
-            <p className="meta-row">
-              <strong>Skills:</strong> {selectedStudent.skills.join(", ") || "None listed"}
-            </p>
-            <p className="meta-row">
-              <strong>Interests:</strong>{" "}
-              {selectedStudent.interests.join(", ") || "None listed"}
-            </p>
-            <p className="meta-row">
-              <strong>Availability:</strong> {selectedStudent.availability}
-            </p>
           </div>
         )}
       </div>
@@ -666,11 +413,7 @@ export default function StudentPage() {
       {activeSection === "applications" && (
         <div className="panel">
           <h2 className="section-title">My Applications</h2>
-          {!selectedStudent ? (
-            <div className="empty-state">
-              Select a student profile to view applications.
-            </div>
-          ) : myApplications().length === 0 ? (
+          {myApplications().length === 0 ? (
             <div className="empty-state">
               You have not applied to any projects yet.
             </div>
@@ -719,14 +462,8 @@ export default function StudentPage() {
       {activeSection === "my-projects" && (
         <div className="panel">
           <h2 className="section-title">My Projects</h2>
-          {!selectedStudent ? (
-            <div className="empty-state">
-              Select a student profile to view accepted projects.
-            </div>
-          ) : myProjects().length === 0 ? (
-            <div className="empty-state">
-              No accepted projects yet.
-            </div>
+          {myProjects().length === 0 ? (
+            <div className="empty-state">No accepted projects yet.</div>
           ) : (
             <div className="card-grid">
               {myProjects().map((app) => {

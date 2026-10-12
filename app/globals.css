@@ -536,6 +536,28 @@ th {
   min-width: 200px;
 }
 
+.student-dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.student-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.student-identity-name {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  color: var(--scarlet);
+  font-size: 1rem;
+}
+
 .inline-actions {
   display: flex;
   flex-wrap: wrap;

@@ -11,7 +11,7 @@ export default function HomePage() {
           Honda.
         </p>
         <div className="landing-actions">
-          <Link href="/student" className="btn">
+          <Link href="/student/select-profile" className="btn">
             Continue as Student
           </Link>
           <Link href="/honda" className="btn btn-secondary">
